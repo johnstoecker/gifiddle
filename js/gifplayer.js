@@ -1,10 +1,10 @@
 'use strict';
 
 function GifPlayer(canvas) {
-    
+
     var gif = null;
     var ctx = canvas.getContext('2d');
-    
+
     var frameIndexCurr = 0;
     var frameIndexPrev = 1;
     var framePrev = null;
@@ -13,9 +13,9 @@ function GifPlayer(canvas) {
     var playing = false;
     var ready = false;
     var userInput = false;
-    
+
     var options;
-    
+
     // override clearRect so it can also render the background color when enabled
     ctx.clearRect = function(x, y, width, height) {
         // I'd like a super.clearRect(), but JavaScript disagrees...
@@ -29,7 +29,7 @@ function GifPlayer(canvas) {
             this.restore();
         }
     };
-    
+
     function render(frameIndex) {
         var renderRaw = options.isRenderRaw();
         var frame = instance.getFrame(frameIndex);
@@ -41,12 +41,12 @@ function GifPlayer(canvas) {
         if (!renderRaw && framePrev) {
             framePrev.repair(ctx);
         }
-        
+
         // clear canvas before rendering the background
         if (frameIndex === 0) {
             instance.clear();
         }
-        
+
         // shade frame background in raw mode
         if (renderRaw) {
             ctx.save();
@@ -54,21 +54,23 @@ function GifPlayer(canvas) {
             ctx.fillRect(frame.left, frame.top, frame.width, frame.height);
             ctx.restore();
         }
-        
+
         // render new frame
         frame.blit(ctx);
 
         framePrev = frame;
     }
-        
+
     var instance = {
         events: new Events(),
         load: function(buffer) {
             gif = new GifFile();
             gif.byteLength = buffer.byteLength;
             gif.events.on('load', function() {
-                canvas.width = gif.hdr.width;
-                canvas.height = gif.hdr.height;
+                // grab screen dimensions
+                // scale image to a reasonable size
+                canvas.width = gif.hdr.width * 4;
+                canvas.height = gif.hdr.height * 4;
 
                 ready = true;
                 this.setFirst();
@@ -89,11 +91,11 @@ function GifPlayer(canvas) {
             if (playing) {
                 return;
             }
-                        
+
             var that = this;
-            
+
             loopCount = 0;
-            
+
             function fixDelay(delay) {
                 // Set a fixed delay of 200 ms for GIF87a files to emulate old
                 // decoders running on old hardware, which is what most ancient
@@ -101,7 +103,7 @@ function GifPlayer(canvas) {
                 if (gif.hdr.ver === '87a' && delay === -1) {
                     return 20;
                 }
-                
+
                 // GIFs with loop extensions and no frame delays is somewhat
                 // undefined behavior, but most browsers change delays shorter
                 // than 20 ms to 100 ms to avoid high CPU usage or even infinite
@@ -109,33 +111,33 @@ function GifPlayer(canvas) {
                 if (gif.loopCount !== -1 && delay < 2) {
                     return 10;
                 }
-                
+
                 return delay;
             }
-            
+
             function playNext() {
                 that.setNext();
-                
+
                 // check if the current frame is the last one
                 if (that.isLastFrame()) {
                     loopCount++;
-                    
+
                     // pause if there's no loop count
                     if (gif.loopCount === -1) {
                         that.pause();
                         return false;
                     }
-                    
+
                     // pause if the loop count has been reached
                     if (gif.loopCount > 0 && loopCount >= gif.loopCount) {
                         that.pause();
                         return false;
                     }
                 }
-                
+
                 return true;
             }
-            
+
             // analyze the delay of all frames for some special cases
             var globalDelay = -1;
             var frameCount = this.getFrameCount();
@@ -144,14 +146,14 @@ function GifPlayer(canvas) {
                 var gce = frame.gce;
                 var frameDelay = gce ? gce.delayTime : -1;
                 var frameUserInput = gce ? gce.userInput : false;
-                
+
                 // frames with user input need to be handled by playLoop()
                 // further below
                 if (frameUserInput) {
                     globalDelay = -2;
                     break;
                 }
- 
+
                 if (i === 0) {
                     // first frame, set reference delay
                     globalDelay = frameDelay;
@@ -163,7 +165,7 @@ function GifPlayer(canvas) {
                     }
                 }
             }
-            
+
             // check if there's a global delay set for all frames
             if (globalDelay !== -2) {
                 globalDelay = fixDelay(globalDelay);
@@ -176,41 +178,41 @@ function GifPlayer(canvas) {
             }
 
             playing = true;
-            
+
             function playNextLoop() {
                 if (playNext()) {
                     playLoop();
                 }
             }
-            
+
             function playLoop() {
                 var delay = 0;
                 do {
                     var frame = that.getFrame();
                     var gce = frame.gce;
-                    
+
                     delay = gce ? gce.delayTime : -1;
-                    
+
                     // cancel previous user input
                     if (userInput) {
                         that.events.emit('userInputEnd');
                     }
-                    
+
                     userInput = gce ? gce.userInput : false;
-                    
+
                     // does the next frame require user input?
                     if (userInput) {
                         that.events.emit('userInputStart', delay);
-                        
+
                         // pause when waiting for user input infinitely
                         if (delay === 0) {
                             return;
                         }
                     }
-                    
+
                     // override delay where required
                     delay = fixDelay(delay);
-                    
+
                     if (delay > 0) {
                         // play next frame with delay
                         timeout = setTimeout(playNextLoop, delay * 10);
@@ -222,9 +224,9 @@ function GifPlayer(canvas) {
                     }
                 } while (delay <= 0);
             }
-            
+
             playLoop();
-            
+
             if (playing) {
                 this.events.emit('play');
             }
@@ -238,14 +240,14 @@ function GifPlayer(canvas) {
                 clearTimeout(timeout);
                 timeout = null;
             }
-            
+
             if (userInput) {
                 this.events.emit('userInputEnd');
                 userInput = false;
             }
-            
+
             playing = false;
-            
+
             this.events.emit('pause');
         },
         stop: function() {
@@ -288,14 +290,14 @@ function GifPlayer(canvas) {
             if (!ready) {
                 return;
             }
-            
+
             var frameCount = this.getFrameCount();
-            
+
             // don't update if there are no frames
             if (frameCount === 0) {
                 return;
             }
-            
+
             while (frameIndex < 0) {
                 frameIndex += frameCount;
             }
@@ -313,7 +315,7 @@ function GifPlayer(canvas) {
 
             this.events.emit('update', frameIndexCurr, frameIndexPrev);
 
-            // check if frames need to be replayed 
+            // check if frames need to be replayed
             var frameStart;
             var frameEnd;
 
@@ -345,7 +347,7 @@ function GifPlayer(canvas) {
         getFrameCount: function() {
             return gif.frames.length;
         },
-        getFrame: function(frameIndex) { 
+        getFrame: function(frameIndex) {
             if (arguments.length === 1) {
                 return gif.frames[frameIndex];
             } else {
@@ -356,34 +358,35 @@ function GifPlayer(canvas) {
             return options;
         },
         clear: function() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);            
+            // scale this?
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
             framePrev = null;
         },
         destroy: function() {
             this.stop();
             gif.destroy();
-            
+
             canvas.width = 0;
             canvas.height = 0;
 
             ready = false;
             this.events.emit('destroy');
             this.events.off();
-            
+
             frameIndexCurr = frameIndexPrev = 0;
         }
     };
-    
+
     options = new GifPlayerOptions(instance);
-    
+
     return instance;
 }
 
 function GifPlayerOptions(gifPlayer) {
-    
+
     var renderRaw = false;
     var renderBackground = false;
-    
+
     function refresh() {
         var frameIndex = gifPlayer.getFrameIndex();
         if (frameIndex === 0) {
@@ -394,7 +397,7 @@ function GifPlayerOptions(gifPlayer) {
             gifPlayer.setFrameIndex(frameIndex);
         }
     }
-    
+
     this.setRenderRaw = function(_renderRaw) {
         if (renderRaw === _renderRaw) {
             return;
@@ -404,11 +407,11 @@ function GifPlayerOptions(gifPlayer) {
 
         refresh();
     };
-    
+
     this.isRenderRaw = function() {
         return renderRaw;
     };
-    
+
     this.setRenderBackground = function(_renderBackground) {
         if (renderBackground === _renderBackground) {
             return;
@@ -418,7 +421,7 @@ function GifPlayerOptions(gifPlayer) {
 
         refresh();
     };
-    
+
     this.isRenderBackground = function() {
         return renderBackground;
     };
@@ -469,7 +472,7 @@ GifFile.prototype = {
                                 case 'NETSCAPE':
                                     this.loopCount = block.loopCount;
                                     break;
-                                    
+
                                 case 'XMP Data':
                                     this.xmp = block.xmp;
                                     break;
@@ -482,13 +485,13 @@ GifFile.prototype = {
                     break;
             }
         }.bind(this);
-        
+
         var handleError = function(evt) {
             this.events.emit('error', evt);
         }.bind(this);
-        
+
         var useWorker = !!window.Worker;
-        
+
         // Chrome refuses to run workers on file:// URLs
         if (window.chrome && window.location.protocol === 'file:') {
             useWorker = false;
@@ -518,7 +521,7 @@ GifFile.prototype = {
             this.worker.terminate();
             this.worker = undefined;
         }
-        
+
         this.hdr = null;
         this.loopCount = -1;
         this.comments = [];
@@ -533,16 +536,16 @@ function GifFrame(hdr, gce, block) {
     this.gce = gce;
     this.canvas = null;
     this.prevImageData = null;
-    
+
     this.width = block.width;
     this.height = block.height;
     this.top = block.topPos;
     this.left = block.leftPos;
-    
+
     this.canvas = document.createElement('canvas');
     this.canvas.width = this.width;
     this.canvas.height = this.height;
-    
+
     this.ctx = this.canvas.getContext('2d');
 
     this.trans = -1;
@@ -559,35 +562,41 @@ GifFrame.prototype = {
             this.prevImageData = ctx.getImageData(this.left, this.top,
                 this.width, this.height);
         }
-        
-        ctx.drawImage(this.canvas, this.left, this.top);
+
+        // turn off image aliasing
+        ctx.msImageSmoothingEnabled = false;
+        ctx.mozImageSmoothingEnabled = false;
+        ctx.webkitImageSmoothingEnabled = false;
+        ctx.imageSmoothingEnabled = false;
+
+        ctx.drawImage(this.canvas, this.left, this.top, 400, 400);
     },
     repair: function(ctx) {
         if (!this.gce) {
             return;
         }
-        
+
         switch (this.gce.disposalMethod) {
             // restore background
             case 2:
                 ctx.clearRect(this.left, this.top, this.width, this.height);
                 break;
-                
+
             // restore previous
             case 3:
                 if (this.prevImageData) {
                     ctx.putImageData(this.prevImageData, this.left, this.top);
                 }
                 break;
-        }       
+        }
     }
 };
 
 function GifImageFrame(hdr, gce, img) {
     GifFrame.call(this, hdr, gce, img);
-    
+
     this.img = img;
-    
+
     var imageData = this.ctx.getImageData(0, 0, this.width, this.height);
     var colorTable;
 
@@ -598,26 +607,26 @@ function GifImageFrame(hdr, gce, img) {
     } else {
         throw new GifError('No color table defined');
     }
-    
+
     var pixels = this.img.pixels;
     var colorIndex;
     var color;
-    
+
     for (var i = 0; i < pixels.length; i++) {
         colorIndex = pixels[i];
-        
+
         // skip invalid indices
         if (colorIndex < 0 || colorIndex >= colorTable.length) {
             continue;
         }
-        
+
         // imageData.data = [R,G,B,A,...]
         color = colorTable[colorIndex];
-        
+
         imageData.data[i * 4 + 0] = color[0];
         imageData.data[i * 4 + 1] = color[1];
         imageData.data[i * 4 + 2] = color[2];
-    
+
         if (colorIndex === this.trans) {
             imageData.data[i * 4 + 3] = 0;
         } else {
@@ -635,9 +644,9 @@ GifImageFrame.prototype = Object.create(GifFrame.prototype);
 
 function GifTextFrame(hdr, gce, pte) {
     GifFrame.call(this, hdr, gce, pte);
-    
+
     this.pte = pte;
-    
+
     // Plain text always uses the global color table, no matter what's
     // set in the GCE. This also means we can't continue without.
     var colorTable = this.hdr.gct;

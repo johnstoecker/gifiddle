@@ -1,6 +1,6 @@
 $(function() {
     var gifiddle = new Gifiddle();
-    
+
     // init modules
     GifiddleMenu(gifiddle);
     GifiddleInfo(gifiddle);
@@ -12,14 +12,14 @@ $(function() {
 });
 
 function Gifiddle() {
-    
+
     function GifiddleLoader() {
 
         var domViewport = $('#viewport');
         var domLoaderIcon = $('#loader-icon');
         var domLoaderAlert = $('#loader-alert');
         var domLoaderAlertMessage = domLoaderAlert.find('.alert-message');
-        
+
         domViewport.hide();
         domLoaderIcon.hide();
         domLoaderAlert.hide();
@@ -45,11 +45,11 @@ function Gifiddle() {
     }
 
     var domViewport = $('#viewport');
-    
+
     var title = $('title').text();
-    
+
     var player = null;
-    
+
     return {
         events: new Events(),
         loader: new GifiddleLoader(),
@@ -57,7 +57,7 @@ function Gifiddle() {
             if (player) {
                 player.destroy();
             }
-            
+
             player = new GifPlayer(domViewport[0]);
             this.events.emit('initPlayer', player);
             player.events.on('ready', function() {
@@ -81,45 +81,45 @@ function Gifiddle() {
         loadFile: function(file) {
             document.title = title + ': ' + file.name;
             window.location.hash = '';
-            
+
             this.loadBlob(file);
         },
         loadUrl: function(url, useProxy) {
             if (url.length === 0) {
                 return;
             }
-            
+
             // get hostname
             var parser = document.createElement('a');
             parser.href = url;
-            
+
             var hostname = parser.hostname;
-            
+
             // strip subdomain
             hostname = hostname.split('.').slice(-2).join('.');
-            
+
             var requestUrl = url;
-            
+
             // use CORS proxy if requested
             if (useProxy) {
                 requestUrl = 'https://cors-anywhere.herokuapp.com/' + url;
             }
-            
+
             var filenameIndex = parser.pathname.lastIndexOf('/');
-            
+
             if (filenameIndex > -1) {
                 var filename = parser.pathname.substring(filenameIndex + 1);
                 document.title = title + ': ' + filename;
             } else {
                 document.title = title;
             }
-            
+
             window.location.hash = url;
 
             // Note: jQuery's .ajax() doesn't support binary files well, therefore
             // a direct XHR level 2 object is used instead
             var xhr = new XMLHttpRequest();
-            
+
             xhr.onloadstart = function() {
                 this.loader.showLoad();
             }.bind(this);
@@ -133,7 +133,7 @@ function Gifiddle() {
                     this.loader.showError('Unable to download GIF: ' + new HttpStatus(xhr.status));
                 }
             }.bind(this);
-            
+
             xhr.ontimeout = function() {
                 this.loader.showError('Unable to download GIF: Connection timed out');
             }.bind(this);
@@ -146,7 +146,7 @@ function Gifiddle() {
                     this.loadUrl(url, true);
                 }
             }.bind(this);
-            
+
             xhr.open('GET', requestUrl, true);
             xhr.responseType = 'blob';
             xhr.send();
@@ -160,17 +160,17 @@ function GifiddleMenu(gifiddle) {
     var domToolbar = $('#toolbar');
     var domToolbarMenu = domToolbar.find('#toolbar-menu');
     var domToolbarExtras = domToolbar.find('#toolbar-extras');
-    
+
     // prevent persistent dropdowns from disappearing on click
     $('.dropdown-persistent').click(function(e) {
         e.stopPropagation();
     });
-    
+
     // open file link
     (function() {
         var domFileLink = domToolbarMenu.find('.file-link');
         var domFileInput = $('<input type="file">');
-        
+
         domFileInput.on('change', function(event) {
             var file = event.target.files[0];
             if (!file) {
@@ -184,13 +184,13 @@ function GifiddleMenu(gifiddle) {
             domFileInput.trigger('click');
         });
     })();
-    
+
     // open url link and modal
     (function() {
         var domModal = $('#modal-url');
         var domForm = domModal.find('#modal-url-form');
         var domInput = domModal.find('#modal-url-input');
-        
+
         domForm.validator().on('submit', function(event) {
             if (!event.isDefaultPrevented()) {
                 event.preventDefault();
@@ -199,36 +199,38 @@ function GifiddleMenu(gifiddle) {
             }
         });
     })();
-    
+
     // options
     (function() {
         var domCheckboxRenderRaw = domToolbarMenu.find('#checkbox-render-raw');
         var domCheckboxRenderBG = domToolbarMenu.find('#checkbox-render-bg');
-        
+
         gifiddle.events.on('initPlayer', function(gifPlayer) {
             var options = gifPlayer.getOptions();
-            
+
             domCheckboxRenderRaw.off();
             domCheckboxRenderRaw.on('change', function(event) {
                 if (gifPlayer.isReady()) {
                     options.setRenderRaw(event.target.checked);
                 }
             });
-            
+
             domCheckboxRenderBG.off();
             domCheckboxRenderBG.on('change', function(event) {
                 if (gifPlayer.isReady()) {
                     options.setRenderBackground(event.target.checked);
                 }
             });
-            
+
             gifPlayer.events.on('ready', function() {
                 options.setRenderRaw(domCheckboxRenderRaw.prop('checked'));
                 options.setRenderBackground(domCheckboxRenderBG.prop('checked'));
             });
         });
     })();
-    
+
+    gifiddle.loadUrl('https://s3-us-west-2.amazonaws.com/map-content-images/testeros.gif');
+
     // comments link and modal
     (function() {
         var domLink = domToolbarExtras.find('.comment-link');
@@ -251,7 +253,7 @@ function GifiddleMenu(gifiddle) {
             commentIndex++;
             update();
         });
-        
+
         function update() {
             if (commentArray.length <= 1) {
                 commentIndex = 0;
@@ -276,7 +278,7 @@ function GifiddleMenu(gifiddle) {
                 domCommentBox.text('');
             }
         }
-        
+
         gifiddle.events.on('initPlayer', function(gifPlayer) {
             gifPlayer.events.on('ready', function(gifFile) {
                 commentArray = gifFile.comments;
@@ -365,7 +367,7 @@ function GifiddleControls(gifiddle) {
 
             updateTooltip(0);
         });
-        
+
         gifPlayer.events.on('destroy', function() {
             domControls.fadeOut();
         });
@@ -394,17 +396,17 @@ function GifiddleControls(gifiddle) {
 }
 
 function GifiddleUserInput(gifiddle) {
-    
+
     var domUserInput = $('#user-input');
     var domCountdown = domUserInput.find('.countdown');
     var countdownTimer = null;
     var countdown;
-    
+
     domUserInput.hide();
-    
+
     gifiddle.events.on('initPlayer', function(gifPlayer) {
         domCountdown.empty();
-        
+
         domUserInput.fadeOut();
         domUserInput.off();
         domUserInput.on('click', function() {
@@ -413,31 +415,31 @@ function GifiddleUserInput(gifiddle) {
                 gifPlayer.setFirst();
             } else {
                 gifPlayer.setNext();
-                gifPlayer.play();                
+                gifPlayer.play();
             }
         });
-        
+
         function updateCountdown() {
             domCountdown.text('(' + countdown + ')');
-            
+
             countdown--;
             if (countdown > 0) {
                 countdownTimer = setTimeout(updateCountdown, 1000);
             }
         }
-        
+
         function stopCountdown() {
             if (countdownTimer) {
                 clearTimeout(countdownTimer);
                 countdownTimer = null;
             }
         }
-        
+
         gifPlayer.events.on('userInputStart', function(delay) {
             if (delay === 0 || delay > 100) {
                 domCountdown.empty();
                 domUserInput.show();
-                
+
                 if (delay > 100) {
                     countdown = Math.ceil(delay / 100);
                     updateCountdown();
@@ -447,7 +449,7 @@ function GifiddleUserInput(gifiddle) {
 
         gifPlayer.events.on('userInputEnd', function() {
             domUserInput.hide();
-            
+
             stopCountdown();
         });
     });
@@ -478,7 +480,7 @@ function GifiddleAutoload(gifiddle) {
 function GifiddleDragAndDrop(gifiddle) {
 
     var domDocument = $(document);
-    
+
     domDocument.on('dragover', function(evt) {
         evt.stopPropagation();
         evt.preventDefault();
@@ -498,7 +500,7 @@ function GifiddleDragAndDrop(gifiddle) {
 }
 
 function GifiddleInfo(gifiddle) {
-    
+
     var domSidebar = $('#info-sidebar');
     var domPanels = domSidebar.find('.panel');
     var domHdrPanel = domSidebar.find('#info-panel-hdr');
@@ -507,7 +509,7 @@ function GifiddleInfo(gifiddle) {
     var domImgPanel = domSidebar.find('#info-panel-img');
     var domPtePanel = domSidebar.find('#info-panel-pte');
     var domStatsPanel = domSidebar.find('#info-panel-stats');
-    
+
     var hdrTable = new Table(domHdrPanel.find('table'));
     var xmpTable = new Table(domXmpPanel.find('table'));
     var gceTable = new Table(domGcePanel.find('table'));
@@ -516,7 +518,7 @@ function GifiddleInfo(gifiddle) {
     var statsTable = new Table(domStatsPanel.find('table'));
 
     var domCheckboxShowInfo = $('#checkbox-show-info');
-    
+
     domCheckboxShowInfo.on('change', function(event) {
         if (event.target.checked) {
             domSidebar.fadeIn();
@@ -529,7 +531,7 @@ function GifiddleInfo(gifiddle) {
             domSidebar.fadeOut();
         }
     });
-    
+
     var formatter = {
         byteSize: function(bytes, si) {
             var thresh = si ? 1000 : 1024;
@@ -601,12 +603,12 @@ function GifiddleInfo(gifiddle) {
             return ratio.toFixed(2);
         }
     };
-    
+
     function buildColorTable(ct, ctFlag, sortFlag) {
         if (!ctFlag) {
             return 'n/a';
         }
-        
+
         var domColorTable = $('<div>');
         domColorTable.addClass('color-table');
 
@@ -617,31 +619,31 @@ function GifiddleInfo(gifiddle) {
             domColor.attr('title', i + ': ' + color.join());
             domColorTable.append(domColor);
         }
-        
+
         var domText = $('<p>');
-        
+
         domText.append(ct.length);
-        
+
         // never seen this one being set in any file, but well... why not?
         if (sortFlag) {
             domText.append(' sorted');
         }
-        
+
         domText.append(' colors');
-        
+
         var domContainer = $('<div>');
         domContainer.append(domText);
         domContainer.append(domColorTable);
         return domContainer;
     }
-    
+
     function updateHeader(gifFile) {
         var hdr = gifFile.hdr;
-        
+
         domHdrPanel.show();
-        
+
         hdrTable.empty();
-        
+
         hdrTable.row('Version', hdr.ver);
         hdrTable.row('Screen size', hdr.width + 'x' + hdr.height);
         hdrTable.row('Global color table', buildColorTable(hdr.gct, hdr.gctFlag, hdr.gctSortFlag));
@@ -653,18 +655,18 @@ function GifiddleInfo(gifiddle) {
             hdrTable.row('Loop count', gifFile.loopCount);
         }
     }
-    
+
     function updateXMP(gifFile) {
-        
+
         xmpTable.empty();
-        
+
         var xmp = gifFile.xmp;
         if (xmp && xmp.startsWith('<?xpacket')) {
             domXmpPanel.show();
-                        
+
             var parser = new DOMParser();
             var xmpDoc = parser.parseFromString(xmp, 'text/xml');
-            
+
             var xmpMeta = xmpDoc.getElementsByTagNameNS('adobe:ns:meta/', 'xmpmeta')[0];
             if (xmpMeta) {
                 var xmptk = xmpMeta.getAttributeNS('adobe:ns:meta/', 'xmptk');
@@ -672,12 +674,12 @@ function GifiddleInfo(gifiddle) {
                     xmpTable.row('Toolkit', xmptk);
                 }
             }
-            
+
             var rdfDescs = xmpDoc.getElementsByTagNameNS('http://www.w3.org/1999/02/22-rdf-syntax-ns#', 'Description');
-            
+
             for (var i = 0; rdfDescs && i < rdfDescs.length; i++) {
                 var rdfDesc = rdfDescs[i];
-                
+
                 // scan attributes (Adobe format)
                 for (var j = 0; j < rdfDesc.attributes.length; j++) {
                     var attr = rdfDesc.attributes[j];
@@ -685,7 +687,7 @@ function GifiddleInfo(gifiddle) {
                         xmpTable.row(attr.localName, attr.value);
                     }
                 }
-                
+
                 // scan nodes (ExifTool format)
                 for (var i = 0; i < rdfDesc.childNodes.length; i++) {
                     var node = rdfDesc.childNodes[i];
@@ -698,20 +700,20 @@ function GifiddleInfo(gifiddle) {
             domXmpPanel.hide();
         }
     }
-    
+
     function updateStats(gifFile) {
-        
+
         domStatsPanel.show();
-        
+
         statsTable.empty();
-        
+
         var cSize = 0;
         var ucSizeRel = 0;
         var ucSizeAbs = 0;
         var colors = 0;
         var colorSet = new Set();
         var time = 0;
-        
+
         function hashColor(color) {
             var hash = 1;
             hash = hash * 17 + color[0];
@@ -719,7 +721,7 @@ function GifiddleInfo(gifiddle) {
             hash = hash * 13 + color[2];
             return hash;
         }
-        
+
         if (gifFile.hdr.gctFlag) {
             colors += gifFile.hdr.gct.length;
             gifFile.hdr.gct.forEach(function(color) {
@@ -732,18 +734,18 @@ function GifiddleInfo(gifiddle) {
             if (!img) {
                 return;
             }
-            
+
             cSize += img.lzwSize;
             ucSizeRel += img.width * img.height;
             ucSizeAbs += gifFile.hdr.width * gifFile.hdr.height;
-            
+
             if (img.lctFlag) {
                 colors += img.lct.length;
                 img.lct.forEach(function(color) {
                     colorSet.add(hashColor(color));
                 });
             }
-            
+
             var gce = frame.gce;
             if (gce) {
                 // if there's a delay of 0, then assume default delay of 100ms that most browsers use
@@ -754,7 +756,7 @@ function GifiddleInfo(gifiddle) {
                 }
             }
         });
-        
+
         if (cSize > 0) {
             statsTable.row('File size', formatter.byteSize(gifFile.byteLength));
             statsTable.row('Absolute DCR', formatter.compressRatio(cSize, ucSizeRel)).attr('title',
@@ -769,13 +771,13 @@ function GifiddleInfo(gifiddle) {
                 'such as cinemagraphs.'
             );
         }
-        
+
         statsTable.row('Total colors', colors).attr('title',
             'Total number of defined colors in the GIF.\n' +
             'Includes colors from local and global color tables.'
         );
         statsTable.row('Unique colors', colorSet.size).attr('title',
-            'Total number of unique colors in the GIF.\n' + 
+            'Total number of unique colors in the GIF.\n' +
             'Includes colors from local and global color tables.'
         );
 
@@ -792,41 +794,41 @@ function GifiddleInfo(gifiddle) {
             );
         }
     }
-    
+
     domPanels.hide();
-    
+
     var framePrev;
     var frameIndexPrev;
     var domColorTables;
-    
+
     function updateFrame(frame, frameIndex) {
         framePrev = frame;
         frameIndexPrev = frameIndex;
-        
+
         // don't produce overhead when the sidebar is hidden
         if (!domSidebar.is(':visible')) {
             return;
         }
 
         imgTable.empty();
-        
+
         if (typeof frame.img === 'undefined') {
             domImgPanel.hide();
             return;
         }
-        
+
         var img = frame.img;
-    
+
         domImgPanel.show();
-        
+
         imgTable.row('Index', frameIndex);
         imgTable.row('Size', img.width + 'x' + img.height);
         imgTable.row('Position', img.topPos + 'x' + img.leftPos);
         imgTable.row('Interlaced', formatter.boolean(img.interlaced));
-        
+
         imgTable.row();
         imgTable.col('Local color table');
-        
+
         // generating a HTML color table is pretty expensive, better cache
         // it for every frame
         if (!domColorTables[frameIndex]) {
@@ -834,18 +836,18 @@ function GifiddleInfo(gifiddle) {
         }
 
         imgTable.col(domColorTables[frameIndex]);
-        
+
         imgTable.row('Compressed size', formatter.byteSize(img.lzwSize));
         imgTable.row('Uncompressed size', formatter.byteSize(img.width * img.height));
         imgTable.row('Compression ratio', formatter.compressRatio(img.lzwSize, img.width * img.height));
         imgTable.row('LZW min. code size', img.lzwMinCodeSize);
-        
+
         pteTable.empty();
 
         var pte = frame.pte;
         if (pte) {
             domPtePanel.show();
-            
+
             pteTable.row('Index', frameIndex);
             pteTable.row('Size', pte.width + 'x' + pte.height);
             pteTable.row('Position', pte.topPos + 'x' + pte.leftPos);
@@ -855,13 +857,13 @@ function GifiddleInfo(gifiddle) {
         } else {
             domPtePanel.hide();
         }
-        
+
         gceTable.empty();
 
         var gce = frame.gce;
         if (gce) {
             domGcePanel.show();
-            
+
             var transText = formatter.boolean(gce.transparencyFlag);
             if (gce.transparencyFlag) {
                 transText += ' (' + gce.transparencyIndex + ')';
@@ -875,27 +877,27 @@ function GifiddleInfo(gifiddle) {
             domGcePanel.hide();
         }
     }
-    
+
     gifiddle.events.on('initPlayer', function(gifPlayer) {
-        
+
         framePrev = null;
         domColorTables = [];
-        
+
         gifPlayer.events.on('ready', function(gifFile) {
             updateHeader(gifFile);
             updateStats(gifFile);
             updateXMP(gifFile);
-            
+
             // show sidebar if previously enabled
             if (domCheckboxShowInfo.prop('checked')) {
                 domSidebar.show();
             }
         });
-        
+
         gifPlayer.events.on('update', function() {
             updateFrame(gifPlayer.getFrame(), gifPlayer.getFrameIndex());
         });
-        
+
         gifPlayer.events.on('destroy', function() {
             domSidebar.hide();
         });
@@ -903,25 +905,25 @@ function GifiddleInfo(gifiddle) {
 }
 
 function Table(domTable) {
-    
+
     var domTbody = domTable.find('tbody');
-    
+
     if (domTbody.length === 0) {
         domTbody = $('<tbody>');
         domTable.append(domTbody);
     }
-    
+
     var domTr;
-    
+
     return {
         row: function() {
             domTr = $('<tr>');
             domTbody.append(domTr);
-            
+
             for (var i = 0; i < arguments.length; i++) {
                 this.col(arguments[i]);
             }
-            
+
             return domTr;
         },
         col: function(content) {
