@@ -69,8 +69,12 @@ function GifPlayer(canvas) {
             gif.events.on('load', function() {
                 // grab screen dimensions
                 // scale image to a reasonable size
-                canvas.width = gif.hdr.width * 4;
-                canvas.height = gif.hdr.height * 4;
+                // canvas.width = gif.hdr.width * 4;
+                // canvas.height = gif.hdr.height * 4;
+                canvas.width = 500;
+                canvas.height = 500;
+                $('#map-overlay').width(500)
+                $('#map-overlay').height(500)
 
                 ready = true;
                 this.setFirst();
@@ -172,6 +176,7 @@ function GifPlayer(canvas) {
                 if (globalDelay === 0) {
                     // there's no point in playing the animation, simply display
                     // the last frame instead of spamming update events
+                    // TODO: will probably run into some issues here
                     this.setLast();
                     return;
                 }
@@ -569,7 +574,7 @@ GifFrame.prototype = {
         ctx.webkitImageSmoothingEnabled = false;
         ctx.imageSmoothingEnabled = false;
 
-        ctx.drawImage(this.canvas, this.left, this.top, 400, 400);
+        ctx.drawImage(this.canvas, this.left, this.top, 500, 500);
     },
     repair: function(ctx) {
         if (!this.gce) {

@@ -3,11 +3,11 @@ $(function() {
 
     // init modules
     GifiddleMenu(gifiddle);
-    GifiddleInfo(gifiddle);
+    // GifiddleInfo(gifiddle);
     GifiddleControls(gifiddle);
-    GifiddleUserInput(gifiddle);
-    GifiddleDragAndDrop(gifiddle);
-    GifiddleAutoplay(gifiddle);
+    // GifiddleUserInput(gifiddle);
+    // GifiddleDragAndDrop(gifiddle);
+    // GifiddleAutoplay(gifiddle);
     GifiddleAutoload(gifiddle);
 });
 
@@ -53,7 +53,8 @@ function Gifiddle() {
     return {
         events: new Events(),
         loader: new GifiddleLoader(),
-        loadBuffer: function(buffer) {
+        loadBuffer: function(buffer, mapData) {
+            console.log('loading buffer')
             if (player) {
                 player.destroy();
             }
@@ -67,24 +68,26 @@ function Gifiddle() {
                 this.loader.showError(evt.message);
                 console.error(evt);
             }.bind(this));
+            decorator = new MapDecorator(player, mapData);
             player.load(buffer);
         },
-        loadBlob: function(blob) {
+        loadBlob: function(blob, mapData = {}) {
             this.loader.showLoad();
 
             var reader = new FileReader();
             reader.addEventListener('load', function(event) {
-                this.loadBuffer(event.target.result);
+                console.log('loading buffer after load load blob')
+                this.loadBuffer(event.target.result, mapData);
             }.bind(this));
             reader.readAsArrayBuffer(blob);
         },
         loadFile: function(file) {
             document.title = title + ': ' + file.name;
-            window.location.hash = '';
-
+            // window.location.hash = '';
+            console.log('loading file')
             this.loadBlob(file);
         },
-        loadUrl: function(url, useProxy) {
+        loadUrl: function(url, useProxy, mapData) {
             if (url.length === 0) {
                 return;
             }
@@ -114,7 +117,7 @@ function Gifiddle() {
                 document.title = title;
             }
 
-            window.location.hash = url;
+            // window.location.hash = url;
 
             // Note: jQuery's .ajax() doesn't support binary files well, therefore
             // a direct XHR level 2 object is used instead
@@ -128,7 +131,8 @@ function Gifiddle() {
                 // only allow 'OK'
                 if (xhr.status === 200) {
                     this.url = url;
-                    this.loadBlob(xhr.response);
+                    console.log('loading url with mapdata')
+                    this.loadBlob(xhr.response, mapData);
                 } else {
                     this.loader.showError('Unable to download GIF: ' + new HttpStatus(xhr.status));
                 }
@@ -143,6 +147,7 @@ function Gifiddle() {
                     this.loader.showError('Unable to download GIF: Connection failed');
                 } else {
                     // might be a cross-origin issue, try again with CORS proxy
+                    console.log('loading url true')
                     this.loadUrl(url, true);
                 }
             }.bind(this);
@@ -194,6 +199,7 @@ function GifiddleMenu(gifiddle) {
         domForm.validator().on('submit', function(event) {
             if (!event.isDefaultPrevented()) {
                 event.preventDefault();
+                console.log('loading on dominput')
                 gifiddle.loadUrl(domInput.val());
                 domModal.modal('hide');
             }
@@ -228,8 +234,6 @@ function GifiddleMenu(gifiddle) {
             });
         });
     })();
-
-    gifiddle.loadUrl('https://s3-us-west-2.amazonaws.com/map-content-images/testeros.gif');
 
     // comments link and modal
     (function() {
@@ -351,6 +355,7 @@ function GifiddleControls(gifiddle) {
         gifPlayer.events.on('update', function(frameIndex, frameIndexPrev) {
             domSlider.val(frameIndex);
             updateTooltip(frameIndex);
+            // console.log(this.mapData);
         });
 
         gifPlayer.events.on('ready', function() {
@@ -456,25 +461,90 @@ function GifiddleUserInput(gifiddle) {
 }
 
 function GifiddleAutoplay(gifiddle) {
-    gifiddle.events.on('initPlayer', function(gifPlayer) {
-        gifPlayer.events.on('ready', function() {
-            var frameCount = gifPlayer.getFrameCount();
-            if (frameCount > 1) {
-                gifPlayer.play();
-            }
-        });
-    });
+  // add this in if we want to autoplay
+    // gifiddle.events.on('initPlayer', function(gifPlayer) {
+    //     gifPlayer.events.on('ready', function() {
+    //         var frameCount = gifPlayer.getFrameCount();
+    //         if (frameCount > 1) {
+    //             gifPlayer.play();
+    //         }
+    //     });
+    // });
 }
 
 function GifiddleAutoload(gifiddle) {
     var url = document.URL;
     var urlFragIndex = url.indexOf('#');
+    var mapId="FbPLSnpxttSYKnskL2gnrQ"
     if (urlFragIndex !== -1) {
         var gifUrl = url.substring(urlFragIndex + 1);
         if (gifUrl.length > 0) {
-            gifiddle.loadUrl(gifUrl);
+          console.log('autoloading')
+          mapId=gifUrl;
+            // gifiddle.loadUrl(gifUrl);
         }
     }
+
+    $.ajax({
+        method: 'GET',
+        url: "https://k0r6hekc1k.execute-api.us-west-2.amazonaws.com/prod/maps/" + mapId,
+        // headers: {
+        //     Authorization: authToken
+        // },
+        // data: JSON.stringify({
+        //     PickupLocation: {
+        //         Latitude: pickupLocation.latitude,
+        //         Longitude: pickupLocation.longitude
+        //     }
+        // }),
+        // contentType: 'application/json',
+        success: function(data) {
+          // gifiddle.events.emit('mapLoaded', data)
+          // MapDecorator(gifiddle, data)
+          mapData = {
+            events: [{
+              title: "Kings Landing Founded",
+              location: [50,50],
+              time: 0
+            },{
+              title: "Doom of Valyria",
+              location: [80,80],
+              time: 25
+            }],
+            legend: {
+              position: [0,80],
+              symbols: [{
+                text: "The North",
+                color: "#FFFFFF"
+              }, {
+                text: "Iron Islands",
+                color: "#333333"
+              }]
+            },
+            labels: [{
+              title: "The Narrow Sea",
+              frames: [1,100],
+              position: [80, 50]
+            }, {
+              title: "Dorne",
+              frames: [5,15],
+              position: [50, 90]
+            }]
+          }
+          console.log('loading map thing')
+          gifiddle.loadUrl("https://s3-us-west-2.amazonaws.com/map-content-images/" + data.map.imageURL.S, false, mapData)
+        },
+        error: function ajaxError(jqXHR, textStatus, errorThrown) {
+            console.error('Error requesting ride: ', textStatus, ', Details: ', errorThrown);
+            console.error('Response: ', jqXHR.responseText);
+            alert('An error occured when requesting your unicorn:\n' + jqXHR.responseText);
+        }
+    });
+
+  // https://k0r6hekc1k.execute-api.us-west-2.amazonaws.com/prod/maps/SifNyz5073u4nF5Dc7Kwjw
+    // gifiddle.loadUrl('https://s3-us-west-2.amazonaws.com/map-content-images/testeros.gif');
+
+
 }
 
 function GifiddleDragAndDrop(gifiddle) {

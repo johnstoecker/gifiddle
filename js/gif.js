@@ -4,7 +4,7 @@
 
 // GIF parser from https://github.com/shachaf/jsgif with some modifications and
 // extensions.
-// 
+//
 // Copyright (c) 2011 Shachaf Ben-Kiki
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -55,7 +55,7 @@ Gif.prototype = {
         }
 
         // LZW decoder from https://github.com/deanm/omggif with some modifications
-        // 
+        //
         // (c) Dean McNamee <dean@gmail.com>, 2013.
         //
         // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -228,13 +228,13 @@ Gif.prototype = {
             hdr.sig = st.readString(3);
             hdr.ver = st.readString(3);
 
-            if (hdr.sig !== 'GIF') {
-                throw new Error('Not a GIF file');
-            }
-
-            if (hdr.ver !== '87a' && hdr.ver !== '89a') {
-                throw new Error('Unsupported GIF version');
-            }
+            // if (hdr.sig !== 'GIF') {
+            //     throw new Error('Not a GIF file');
+            // }
+            //
+            // if (hdr.ver !== '87a' && hdr.ver !== '89a') {
+            //     throw new Error('Unsupported GIF version');
+            // }
 
             hdr.width = st.readUint16();
             hdr.height = st.readUint16();
@@ -305,10 +305,10 @@ Gif.prototype = {
 
                     st.readUint8(); // block terminator
                 }
-                
+
                 function parseXMPExt(block) {
                     block.xmp = st.readBlock(true).toString();
-                    
+
                     // remove fixup table
                     if (block.xmp.length > 256) {
                         block.xmp = block.xmp.substring(0, block.xmp.length - 257);
@@ -326,7 +326,7 @@ Gif.prototype = {
                     case 'NETSCAPE':
                         parseNetscapeExt(block);
                         break;
-                        
+
                     case 'XMP Data':
                         parseXMPExt(block);
                         break;
@@ -334,7 +334,7 @@ Gif.prototype = {
                     default:
                         parseUnknownAppExt(block);
                         break;
-                } 
+                }
             }
 
             function parseUnknownExt(block) {

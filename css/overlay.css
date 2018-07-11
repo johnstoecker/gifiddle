@@ -1,0 +1,27 @@
+#map-overlay {
+  /* its over 9000! */
+  z-index:9001;
+  color: red;
+
+  /* .legend { */
+  /* } */
+}
+.legend-color {
+  height: 15px;
+  width: 15px;
+  border: 2px solid black;
+  border-radius: 2px;
+}
+
+#event-text {
+  position: relative;
+  top: -40px;
+  font-size: 28px;
+}
+
+#event-pixel {
+  height: 15px;
+  width: 15px;
+  border: 5px solid green;
+  border-radius: 3px;
+}
