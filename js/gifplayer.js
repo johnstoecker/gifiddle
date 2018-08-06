@@ -1,6 +1,9 @@
 'use strict';
 
+var MapData = window.MapData || {};
+
 function GifPlayer(canvas) {
+
 
     var gif = null;
     var ctx = canvas.getContext('2d');
@@ -61,20 +64,70 @@ function GifPlayer(canvas) {
         framePrev = frame;
     }
 
+    // possible to do in CSS? yes, media queries can do this.
+    // but we want to resize + get scaling dynamically....
+    // so, resize our gif up to this size + grab the scaling factor
+    // this allows us to place the text on the correct locations
+    // TODO: re-run on resize
+    // also this wont work with tall maps. Tall maps are bad though.
+    function biggestScreenWidthAvailable () {
+      var width = document.documentElement.clientWidth;
+      if (width >= 1000) {
+        return 960;
+      } else if (width >= 760) {
+        return 720;
+      } else if (width >= 540) {
+        return 540;
+      } else if (width >= 420){
+        return 420;
+      } else {
+        return 300;
+      }
+    }
+
+    function biggestScreenHeightAvailable () {
+      return document.documentElement.clientHeight - 80;
+    }
+
+    // TODO: images that are larger than availableWidth????
+    // that will return ZERO, yikes
+    function getScaleFactor(imgSize, availableSize) {
+      return Math.floor((1.0 * availableSize)/(1.0 * imgSize))
+    }
+
     var instance = {
         events: new Events(),
         load: function(buffer) {
             gif = new GifFile();
             gif.byteLength = buffer.byteLength;
             gif.events.on('load', function() {
+                var screenWidth = biggestScreenWidthAvailable();
+                var screenHeight = biggestScreenHeightAvailable();
+                var horizontalScaleFactor = getScaleFactor(gif.hdr.width, screenWidth);
+                var verticalScaleFactor = getScaleFactor(gif.hdr.height, screenHeight);
+                var scaleFactor = Math.min(horizontalScaleFactor, verticalScaleFactor);
+                var actualWidth = scaleFactor * gif.hdr.width;
+                var actualHeight = scaleFactor * gif.hdr.height;
+                MapData.scaleFactor = scaleFactor;
+                MapData.width = actualWidth;
+                MapData.height = actualHeight;
                 // grab screen dimensions
                 // scale image to a reasonable size
                 // canvas.width = gif.hdr.width * 4;
                 // canvas.height = gif.hdr.height * 4;
-                canvas.width = 500;
-                canvas.height = 500;
-                $('#map-overlay').width(500)
-                $('#map-overlay').height(500)
+                canvas.width = actualWidth;
+                canvas.height = actualHeight;
+                $('#map-overlay').width(actualWidth)
+                $('#map-overlay').height(actualHeight)
+                console.log(screenWidth);
+                console.log(horizontalScaleFactor);
+                console.log(verticalScaleFactor);
+                console.log(actualWidth);
+                // canvas.width = 500;
+                // canvas.height = 500;
+                // $('#map-overlay').width(500)
+                // $('#map-overlay').height(500)
+
 
                 ready = true;
                 this.setFirst();
@@ -574,7 +627,9 @@ GifFrame.prototype = {
         ctx.webkitImageSmoothingEnabled = false;
         ctx.imageSmoothingEnabled = false;
 
-        ctx.drawImage(this.canvas, this.left, this.top, 500, 500);
+        if (window.MapData) {
+          ctx.drawImage(this.canvas, this.left, this.top, window.MapData.width, window.MapData.height);
+        }
     },
     repair: function(ctx) {
         if (!this.gce) {

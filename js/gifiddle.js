@@ -475,7 +475,8 @@ function GifiddleAutoplay(gifiddle) {
 function GifiddleAutoload(gifiddle) {
     var url = document.URL;
     var urlFragIndex = url.indexOf('#');
-    var mapId="FbPLSnpxttSYKnskL2gnrQ"
+    // var mapId="FbPLSnpxttSYKnskL2gnrQ"
+    var mapId="ykAQhssELisORQ4j9FDiIw";
     if (urlFragIndex !== -1) {
         var gifUrl = url.substring(urlFragIndex + 1);
         if (gifUrl.length > 0) {
@@ -488,51 +489,13 @@ function GifiddleAutoload(gifiddle) {
     $.ajax({
         method: 'GET',
         url: "https://k0r6hekc1k.execute-api.us-west-2.amazonaws.com/prod/maps/" + mapId,
+        // TODO: view private maps
         // headers: {
         //     Authorization: authToken
         // },
-        // data: JSON.stringify({
-        //     PickupLocation: {
-        //         Latitude: pickupLocation.latitude,
-        //         Longitude: pickupLocation.longitude
-        //     }
-        // }),
-        // contentType: 'application/json',
         success: function(data) {
-          // gifiddle.events.emit('mapLoaded', data)
-          // MapDecorator(gifiddle, data)
-          mapData = {
-            events: [{
-              title: "Kings Landing Founded",
-              location: [50,50],
-              time: 0
-            },{
-              title: "Doom of Valyria",
-              location: [80,80],
-              time: 25
-            }],
-            legend: {
-              position: [0,80],
-              symbols: [{
-                text: "The North",
-                color: "#FFFFFF"
-              }, {
-                text: "Iron Islands",
-                color: "#333333"
-              }]
-            },
-            labels: [{
-              title: "The Narrow Sea",
-              frames: [1,100],
-              position: [80, 50]
-            }, {
-              title: "Dorne",
-              frames: [5,15],
-              position: [50, 90]
-            }]
-          }
           console.log('loading map thing')
-          gifiddle.loadUrl("https://s3-us-west-2.amazonaws.com/map-content-images/" + data.map.imageURL.S, false, mapData)
+          gifiddle.loadUrl("https://s3-us-west-2.amazonaws.com/map-content-images/" + data.imageURL, false, data)
         },
         error: function ajaxError(jqXHR, textStatus, errorThrown) {
             console.error('Error requesting ride: ', textStatus, ', Details: ', errorThrown);

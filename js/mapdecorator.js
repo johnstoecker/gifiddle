@@ -1,47 +1,44 @@
 function MapDecorator(player, data) {
     // TODO: calculate this on fly for variable height maps
-    const MAPSCALE=5;
-    console.log(player)
     console.log(data);
-
-    data = {
-      events: [{
-        text: "Kings Landing Founded",
-        position: [50,50],
-        time: 1
-      },{
-        text: "Children of the Forest Retreat",
-        position: [50, 10],
-        time: 2
-      },{
-        text: "Doom of Valyria",
-        position: [80,80],
-        time: 25
-      }],
-      legend: {
-        position: [0,80],
-        symbols: [{
-          text: "The North",
-          color: "#FFFFFF"
-        }, {
-          text: "Iron Islands",
-          color: "#333333"
-        }]
-      },
-      labels: [{
-        text: "The Narrow Sea",
-        frames: [1,100],
-        position: [80, 50]
-      }, {
-        text: "Dorne",
-        frames: [5,15],
-        position: [50, 90]
-      }]
-    }
-    var eventsHashMap = new Map();
-    $.each(data.events, function($index, event) {
-      eventsHashMap.set(event.time, event)
-    })
+    // data = {
+    //   events: [{
+    //     text: "Kings Landing Founded",
+    //     position: [50,50],
+    //     time: 1
+    //   },{
+    //     text: "Children of the Forest Retreat",
+    //     position: [50, 10],
+    //     time: 2
+    //   },{
+    //     text: "Doom of Valyria",
+    //     position: [80,80],
+    //     time: 25
+    //   }],
+    //   legend: {
+    //     position: [0,80],
+    //     symbols: [{
+    //       text: "The North",
+    //       color: "#FFFFFF"
+    //     }, {
+    //       text: "Iron Islands",
+    //       color: "#333333"
+    //     }]
+    //   },
+    //   labels: [{
+    //     text: "The Narrow Sea",
+    //     frames: [1,100],
+    //     position: [80, 50]
+    //   }, {
+    //     text: "Dorne",
+    //     frames: [5,15],
+    //     position: [50, 90]
+    //   }]
+    // }
+    // var eventsHashMap = data.events
+    // $.each(data.events, function($index, event) {
+    //   eventsHashMap.set(event.time, event)
+    // })
     var mapDiv = $('#map-overlay');
 
     // initialize function that puts up the legend
@@ -59,24 +56,27 @@ function MapDecorator(player, data) {
       // for ease of jquery selection
       hiddenDivIds = "#no-id-given"
       visibleDivIds = "#no-id-given"
-      $.each(data.labels, function($index, label) {
-        if(label.frames && label.frames.length && label.frames.length > 0) {
-          if(frame > label.frames[0] && frame < label.frames[1]) {
-            visibleDivIds+=(", #"+label.id)
+      if (data.Labels) {
+        $.each(data.labels, function($index, label) {
+          if(label.frames && label.frames.length && label.frames.length > 0) {
+            if(frame > label.frames[0] && frame < label.frames[1]) {
+              visibleDivIds+=(", #"+label.id)
+            } else {
+              hiddenDivIds+=(", #"+label.id)
+            }
           } else {
-            hiddenDivIds+=(", #"+label.id)
+            visibleDivIds+=(", #"+label.id)
           }
-        } else {
-          visibleDivIds+=(", #"+label.id)
-        }
-      })
-      var currentEvent = eventsHashMap.get(frame);
+        })
+      }
+      var currentEvent = data.Events[frame];
       if(currentEvent){
         visibleDivIds+=(", #event-text");
         $("#event-text").text(currentEvent.text);
-        if(currentEvent.position) {
+        if(currentEvent.location) {
+          var position = currentEvent.location
           visibleDivIds+=(", #event-pixel");
-          setPosition($("#event-pixel"), currentEvent.position);
+          setPosition($("#event-pixel"), position);
         }
       } else {
         hiddenDivIds+=(", #event-text, #event-pixel");
@@ -88,74 +88,55 @@ function MapDecorator(player, data) {
     function initializeComponents() {
       // mapDiv.append( "<div class='legend'>Test</div>" );
       // build legend
-      if (data.legend && data.legend.position) {
-        $legend = buildLegend(data.legend)
-        $labels = buildLabels(data.labels)
+      if (data.Legend) {
+        $legend = buildLegend(data.Legend)
+        $labels = buildLabels(data.Labels || {})
         mapDiv.append($legend);
         mapDiv.append($labels);
       }
-      // var photos = [];
-      // $.each(data.items, function(index, photo) {
-      //   var $imageSpan = $("<span></span>").addClass("image");
-      //   var $anchorTag = $("<a></a>").prop("href", photo.link);
-      //   $("<img/>").prop("src", photo.media.m.replace("_m", "_o")).appendTo($anchorTag);
-      //   $anchorTag.appendTo($imageSpan);
-      //   photos.push($imageSpan);
-      // });
-      // $photoDiv.append(photos);
     }
-    // var instance = {
-    //     events: new Events(),
-    //     // loader: new GifiddleLoader(),
-    //     loadBuffer: function(buffer) {
-    //         if (player) {
-    //             player.destroy();
-    //         }
-    //
-    //         player = new GifPlayer(domViewport[0]);
-    //         this.events.emit('initPlayer', player);
-    //         player.events.on('ready', function() {
-    //             this.loader.showCanvas();
-    //         }.bind(this));
-    //         player.events.on('error', function(evt) {
-    //             this.loader.showError(evt.message);
-    //             console.error(evt);
-    //         }.bind(this));
-    //         player.load(buffer);
-    //     },
-    //     loadBlob: function(blob) {
-    //         this.loader.showLoad();
-    //
-    //         var reader = new FileReader();
-    //         reader.addEventListener('load', function(event) {
-    //             this.loadBuffer(event.target.result);
-    //         }.bind(this));
-    //         reader.readAsArrayBuffer(blob);
-    //     },
-    //     loadFile: function(file) {
-    //         document.title = title + ': ' + file.name;
-    //         window.location.hash = '';
-    //
-    //         this.loadBlob(file);
-    //     },
-    // };
+
     // safely grab position
     function setPosition($div, pos) {
       divPosition = [parseInt(pos[0]), parseInt(pos[1])]
       $div.css("position", "absolute");
-      $div.css("left", divPosition[0] * MAPSCALE + "px")
-      $div.css("top", divPosition[1] * MAPSCALE + "px")
+      $div.css("left", divPosition[0] * window.MapData.scaleFactor + "px")
+      $div.css("top", divPosition[1] * window.MapData.scaleFactor + "px")
+      return $div;
+    }
+
+    function setLocationFromString($div, location) {
+      console.log(location)
+      var spacing = "20px";
+      // console.log(window.MapData.scaleFactor);
+      $div.css("position", "absolute");
+      if (location == "BOTTOMLEFT") {
+        $div.css("left", spacing)
+        $div.css("bottom", spacing)
+      } else if (location == "BOTTOMRIGHT") {
+        $div.css("right", spacing)
+        $div.css("bottom", spacing)
+      } else if (location == "TOPLEFT") {
+        $div.css("left", spacing)
+        $div.css("top", spacing)
+      } else if (location == "TOPRIGHT") {
+        $div.css("right", spacing)
+        $div.css("top", spacing)
+      }
       return $div;
     }
 
     function buildLegend(legend) {
       var $legend = $(".legend");
-      $legend = setPosition($legend, legend.position)
-      $.each(legend.symbols, function($index, symbol) {
-        var $legendSymbol = $("<div></div>").addClass("legend-symbol").text(symbol.text);
-        var $legendColor = $("<div></div>").addClass("legend-color").css('background-color', symbol.color);
-        $legendSymbol.appendTo($legend);
-        $legendColor.appendTo($legend);
+      $legend = setLocationFromString($legend, legend.location)
+      console.log(legend.entries)
+      $.each(legend.entries, function($index, entry) {
+        var $legendEntry = $("<div></div>").addClass("legend-entry")
+        var $legendColor = $("<div></div>").addClass("legend-color").css('background-color', entry.color);
+        var $legendSymbol = $("<div></div>").addClass("legend-symbol").text(entry.label);
+        $legendColor.appendTo($legendEntry);
+        $legendSymbol.appendTo($legendEntry);
+        $legendEntry.appendTo($legend);
       })
       // $.each(data.items, function(index, photo) {
       //   var $imageSpan = $("<span></span>").addClass("image");
@@ -166,6 +147,7 @@ function MapDecorator(player, data) {
       // });
       return $legend;
     }
+
     function buildLabels(labels){
       var labelDivs = []
       $.each(labels, function($index, label) {

@@ -6,7 +6,13 @@
   /* .legend { */
   /* } */
 }
+.legend-entry {
+  display: flex;
+  align-items: center;
+}
+
 .legend-color {
+  margin: 5px;
   height: 15px;
   width: 15px;
   border: 2px solid black;
